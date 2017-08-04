@@ -1,7 +1,6 @@
 package org.jetlang.channels;
 
 import org.jetlang.core.Callback;
-import org.jetlang.core.MessageReader;
 import org.jetlang.fibers.ThreadFiber;
 
 import java.util.List;
@@ -44,12 +43,11 @@ public class LockFreeBatchSubscriberPerf {
             }
         };
 
-        Callback<MessageReader<String>> recyclingCb = new Callback<MessageReader<String>>() {
+        Callback<Iterable<String>> recyclingCb = new Callback<Iterable<String>>() {
             int count = 0;
 
-            public void onMessage(MessageReader<String> message) {
-                for (int val = 0; val < message.size(); val++) {
-                    String m = message.get(val);
+            public void onMessage(Iterable<String> message) {
+                for (String ignored : message) {
                     count++;
                 }
                 if (count >= total) {
