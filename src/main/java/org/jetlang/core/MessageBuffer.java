@@ -6,7 +6,7 @@ import java.util.ArrayList;
  * User: mrettig
  * Date: Sep 28, 2009
  */
-public class MessageBuffer<T> implements MessageReader<T> {
+public class  MessageBuffer<T> implements MessageReader<T> {
     private ArrayList<T> events = new ArrayList<>();
 
     public int size() {

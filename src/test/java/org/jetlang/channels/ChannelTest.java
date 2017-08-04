@@ -362,14 +362,14 @@ public class ChannelTest {
         ThreadFiber bus = new ThreadFiber();
         bus.start();
 
-        MemoryChannel<String> channel = new MemoryChannel<String>();
+        MemoryChannel<String> channel = new MemoryChannel<>();
 
         final int max = 10000000;
         final CountDownLatch reset = new CountDownLatch(1);
-        Callback<MessageReader<String>> cb = new Callback<MessageReader<String>>() {
+        Callback<List<String>> cb = new Callback<List<String>>() {
             int total = 0;
 
-            public void onMessage(MessageReader<String> batch) {
+            public void onMessage(List<String> batch) {
                 total += batch.size();
                 if (total == max) {
                     reset.countDown();

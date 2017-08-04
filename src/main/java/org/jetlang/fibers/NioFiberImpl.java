@@ -2,25 +2,13 @@ package org.jetlang.fibers;
 
 import org.jetlang.core.Callback;
 import org.jetlang.core.Disposable;
-import org.jetlang.core.EventBuffer;
 import org.jetlang.core.QueueSwapper;
 import org.jetlang.core.SchedulerImpl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.CancelledKeyException;
-import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.WritableByteChannel;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.nio.channels.*;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class NioFiberImpl implements Runnable, NioFiber {
@@ -413,7 +401,7 @@ public class NioFiberImpl implements Runnable, NioFiber {
 
     @Override
     public void run() {
-        EventBuffer buffer = new EventBuffer();
+        List<Runnable> buffer = new LinkedList<>();
         while (true) {
             try {
                 final int select = selector.select();

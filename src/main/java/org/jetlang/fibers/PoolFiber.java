@@ -2,12 +2,9 @@ package org.jetlang.fibers;
 
 import org.jetlang.core.BatchExecutor;
 import org.jetlang.core.Disposable;
-import org.jetlang.core.EventBuffer;
 import org.jetlang.core.SchedulerImpl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +24,7 @@ class PoolFiber implements Fiber {
     private final Collection<Disposable> _disposables = Collections.synchronizedList(new ArrayList<Disposable>());
     private final SchedulerImpl _scheduler;
     private final Runnable _flushRunnable;
-    private EventBuffer buffer = new EventBuffer();
+    private List<Runnable> buffer = new LinkedList<>();
 
     public PoolFiber(Executor pool, BatchExecutor executor, ScheduledExecutorService scheduler) {
         _flushExecutor = pool;
@@ -43,7 +40,7 @@ class PoolFiber implements Fiber {
     private class SynchronizedQueue {
         private boolean running = false;
         private boolean flushPending = false;
-        private EventBuffer queue = new EventBuffer();
+        private List<Runnable> queue = new LinkedList<>();
 
         private synchronized void setRunning(boolean newValue) {
             running = newValue;
@@ -57,12 +54,12 @@ class PoolFiber implements Fiber {
             }
         }
 
-        private synchronized EventBuffer swap(EventBuffer buffer) {
+        private synchronized List<Runnable> swap(List<Runnable> buffer) {
             if (queue.isEmpty() || !running) {
                 flushPending = false;
                 return null;
             }
-            EventBuffer toReturn = queue;
+            List<Runnable> toReturn = queue;
             queue = buffer;
             return toReturn;
         }
@@ -76,7 +73,7 @@ class PoolFiber implements Fiber {
     }
 
     private void flush() {
-        EventBuffer swap = _queue.swap(buffer);
+        List<Runnable> swap = _queue.swap(buffer);
         while (swap != null) {
             buffer = swap;
             _commandExecutor.execute(buffer);

@@ -4,7 +4,7 @@ import org.jetlang.core.Callback;
 import org.jetlang.core.Filter;
 import org.jetlang.fibers.Fiber;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -35,7 +35,7 @@ public class BatchSubscriber<T> extends BaseSubscription<T> {
 
             @Override
             public String toString() {
-                return "Flushing " + BatchSubscriber.this + " via " +  _receive.toString();
+                return "Flushing " + BatchSubscriber.this + " via " + _receive.toString();
             }
         };
     }
@@ -52,7 +52,7 @@ public class BatchSubscriber<T> extends BaseSubscription<T> {
     protected void onMessageOnProducerThread(T msg) {
         synchronized (_lock) {
             if (_pending == null) {
-                _pending = new ArrayList<>();
+                _pending = new LinkedList<>();
                 _queue.schedule(_flushRunnable, _interval, _timeUnit);
             }
             _pending.add(msg);

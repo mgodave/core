@@ -1,13 +1,16 @@
 package org.jetlang.core;
 
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Pipe;
+import java.util.LinkedList;
+import java.util.List;
 
 public class NioQueueSwapper {
     private final Pipe.SinkChannel sink;
     private final ByteBuffer pingByte = ByteBuffer.allocateDirect(1);
-    private EventBuffer _queue = new EventBuffer();
+    private List<Runnable> _queue = new LinkedList<>();
     private boolean running = true;
 
     public NioQueueSwapper(Pipe.SinkChannel sink) {
@@ -31,8 +34,8 @@ public class NioQueueSwapper {
         }
     }
 
-    public synchronized EventBuffer swap(EventBuffer buffer) {
-        EventBuffer toReturn = _queue;
+    public synchronized List<Runnable> swap(List<Runnable> buffer) {
+        List<Runnable> toReturn = _queue;
         _queue = buffer;
         return toReturn;
     }

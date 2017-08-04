@@ -1,5 +1,7 @@
 package org.jetlang.core;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -14,7 +16,7 @@ public class RunnableBlockingQueue implements EventQueue {
     private volatile boolean _running = true;
     private final Lock _lock = new ReentrantLock();
     private final Condition _waiter = _lock.newCondition();
-    private EventBuffer _queue = new EventBuffer();
+    private List<Runnable> _queue = new LinkedList<>();
 
     public boolean isRunning() {
         return _running;
@@ -34,7 +36,7 @@ public class RunnableBlockingQueue implements EventQueue {
         }
     }
 
-    public EventBuffer swap(EventBuffer buffer) {
+    public List<Runnable> swap(List<Runnable> buffer) {
         _lock.lock();
         try {
             while (_queue.isEmpty() && _running) {
@@ -44,7 +46,7 @@ public class RunnableBlockingQueue implements EventQueue {
                     throw new RuntimeException(e);
                 }
             }
-            EventBuffer toReturn = _queue;
+            List<Runnable> toReturn = _queue;
             _queue = buffer;
             return toReturn;
         } finally {

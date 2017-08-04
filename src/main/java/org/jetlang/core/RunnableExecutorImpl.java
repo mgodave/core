@@ -2,6 +2,7 @@ package org.jetlang.core;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -33,7 +34,7 @@ public class RunnableExecutorImpl implements RunnableExecutor {
     }
 
     public void run() {
-        EventBuffer buffer = new EventBuffer();
+        List<Runnable> buffer = new LinkedList<>();
         while (_commands.isRunning()) {
             buffer = _commands.swap(buffer);
             _commandExecutor.execute(buffer);

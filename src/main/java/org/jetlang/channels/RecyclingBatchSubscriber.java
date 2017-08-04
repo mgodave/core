@@ -2,10 +2,10 @@ package org.jetlang.channels;
 
 import org.jetlang.core.Callback;
 import org.jetlang.core.Filter;
-import org.jetlang.core.MessageBuffer;
-import org.jetlang.core.MessageReader;
 import org.jetlang.fibers.Fiber;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -16,14 +16,14 @@ import java.util.concurrent.locks.ReentrantLock;
 public class RecyclingBatchSubscriber<T> extends BaseSubscription<T> {
     private final Lock _lock = new ReentrantLock();
     private final Fiber _queue;
-    private final Callback<MessageReader<T>> _receive;
+    private final Callback<List<T>> _receive;
     private final int _interval;
     private final TimeUnit _timeUnit;
-    private MessageBuffer<T> _pending = new MessageBuffer<>();
-    private MessageBuffer<T> _active = new MessageBuffer<>();
+    private LinkedList<T> _pending = new LinkedList<>();
+    private LinkedList<T> _active = new LinkedList<>();
     private final Runnable _flushRunnable;
 
-    public RecyclingBatchSubscriber(Fiber queue, Callback<MessageReader<T>> receive,
+    public RecyclingBatchSubscriber(Fiber queue, Callback<List<T>> receive,
                                     Filter<T> filter,
                                     int interval, TimeUnit timeUnit) {
         super(queue, filter);
@@ -38,12 +38,12 @@ public class RecyclingBatchSubscriber<T> extends BaseSubscription<T> {
 
             @Override
             public String toString() {
-                return "Flushing " + RecyclingBatchSubscriber.this + " via " +  _receive.toString();
+                return "Flushing " + RecyclingBatchSubscriber.this + " via " + _receive.toString();
             }
         };
     }
 
-    public RecyclingBatchSubscriber(Fiber queue, Callback<MessageReader<T>> receive,
+    public RecyclingBatchSubscriber(Fiber queue, Callback<List<T>> receive,
                                     int interval, TimeUnit timeUnit) {
         this(queue, receive, null, interval, timeUnit);
     }
@@ -67,7 +67,7 @@ public class RecyclingBatchSubscriber<T> extends BaseSubscription<T> {
     private void flush() {
         _lock.lock();
         try {
-            MessageBuffer<T> nowPending = _active;
+            LinkedList<T> nowPending = _active;
             _active = _pending;
             _pending = nowPending;
         } finally {

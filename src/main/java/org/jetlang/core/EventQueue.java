@@ -1,5 +1,7 @@
 package org.jetlang.core;
 
+import java.util.List;
+
 public interface EventQueue {
     boolean isRunning();
 
@@ -7,7 +9,7 @@ public interface EventQueue {
 
     void put(Runnable r);
 
-    EventBuffer swap(EventBuffer buffer);
+    List<Runnable> swap(List<Runnable> buffer);
 
     boolean isEmpty();
 }

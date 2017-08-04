@@ -1,5 +1,7 @@
 package org.jetlang.core;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -17,7 +19,7 @@ public class CappedBlockingQueue implements EventQueue {
     private final Lock _lock = new ReentrantLock();
     private final Condition empty = _lock.newCondition();
     private final Condition full = _lock.newCondition();
-    private EventBuffer _queue = new EventBuffer();
+    private List<Runnable> _queue = new LinkedList<>();
     private final int cap;
 
     public CappedBlockingQueue(int maxQueueSize) {
@@ -51,7 +53,7 @@ public class CappedBlockingQueue implements EventQueue {
         }
     }
 
-    public EventBuffer swap(EventBuffer buffer) {
+    public List<Runnable> swap(List<Runnable> buffer) {
 
         _lock.lock();
         try {
@@ -62,7 +64,7 @@ public class CappedBlockingQueue implements EventQueue {
                     throw new RuntimeException(e);
                 }
             }
-            EventBuffer toReturn = _queue;
+            List<Runnable> toReturn = _queue;
             _queue = buffer;
             full.signalAll();
             return toReturn;

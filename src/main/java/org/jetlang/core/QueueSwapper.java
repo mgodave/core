@@ -1,10 +1,12 @@
 package org.jetlang.core;
 
 import java.nio.channels.Selector;
+import java.util.LinkedList;
+import java.util.List;
 
 public class QueueSwapper {
     private final Selector sink;
-    private EventBuffer _queue = new EventBuffer();
+    private List<Runnable> _queue = new LinkedList<>();
 
     private boolean running = true;
 
@@ -23,8 +25,8 @@ public class QueueSwapper {
         }
     }
 
-    public synchronized EventBuffer swap(EventBuffer buffer) {
-        EventBuffer toReturn = _queue;
+    public synchronized List<Runnable> swap(List<Runnable> buffer) {
+        List<Runnable> toReturn = _queue;
         _queue = buffer;
         return toReturn;
     }
