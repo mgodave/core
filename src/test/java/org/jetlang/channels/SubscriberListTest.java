@@ -5,6 +5,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -62,10 +63,55 @@ public class SubscriberListTest {
     assertEquals(3, received.size());
   }
 
+  @Test
+//  @Ignore
+  public void perfWithLinkedListTest() {
+    List<Callback<String>> list = new LinkedList<>();
+    Callback<String> cb = new Callback<String>() {
+      public void onMessage(String message) {
+      }
+    };
+
+    list.add(cb);
+    list.add(cb);
+    list.add(cb);
+
+    Long start = System.currentTimeMillis();
+    for (int i = 0; i < 100000000; i++) {
+      for (Callback<String> each : list) {
+        each.onMessage("hello");
+      }
+    }
+    System.out.println(System.currentTimeMillis() - start);
+
+  }
 
   @Test
-  @Ignore
-  public void perfTest() {
+//  @Ignore
+  public void perfWithArrayListTest() {
+    List<Callback<String>> list = new ArrayList<>(3);
+    Callback<String> cb = new Callback<String>() {
+      public void onMessage(String message) {
+      }
+    };
+
+    list.add(cb);
+    list.add(cb);
+    list.add(cb);
+
+    Long start = System.currentTimeMillis();
+    for (int i = 0; i < 100000000; i++) {
+      for (Callback<String> each : list) {
+        each.onMessage("hello");
+      }
+    }
+    System.out.println(System.currentTimeMillis() - start);
+
+  }
+
+  @Test
+//  @Ignore
+  public void perfWithArrayCopyTest() {
     SubscriberList<String> list = new SubscriberList<>();
     Callback<String> cb = new Callback<String>() {
       public void onMessage(String message) {
@@ -76,13 +122,16 @@ public class SubscriberListTest {
     list.add(cb);
     list.add(cb);
 
-    for (int i = 0; i < 100000000; i++)
+    Long start = System.currentTimeMillis();
+    for (int i = 0; i < 100000000; i++) {
       list.publish("hello");
+    }
+    System.out.println(System.currentTimeMillis() - start);
 
   }
 
   @Test
-  @Ignore
+//  @Ignore
   public void perfTestWithCopyOnWrite() {
     CopyOnWriteArrayList<Callback<String>> list = new CopyOnWriteArrayList<>();
     Callback<String> cb = new Callback<String>() {
@@ -94,9 +143,13 @@ public class SubscriberListTest {
     list.add(cb);
     list.add(cb);
 
-    for (int i = 0; i < 100000000; i++)
-      for (Callback<String> each : list)
+    Long start = System.currentTimeMillis();
+    for (int i = 0; i < 100000000; i++) {
+      for (Callback<String> each : list) {
         each.onMessage("hello");
+      }
+    }
+    System.out.println(System.currentTimeMillis() - start);
 
   }
 
