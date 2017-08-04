@@ -7,13 +7,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("unused")
 @BenchmarkMode({Mode.Throughput})
 @State(Scope.Thread)
-@Measurement(batchSize = 1, iterations = 5)
-@Warmup(batchSize = 1, iterations = 5)
-@Fork(1)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class ListIterationBenchmark {
+
+  static final int NUM_ITERATIONS = 100000;
 
   String[] array;
   ArrayList<String> arrayList;
@@ -22,7 +24,7 @@ public class ListIterationBenchmark {
 
   @Setup
   public void setup() {
-    array = new String[100000];
+    array = new String[NUM_ITERATIONS];
     Arrays.fill(array, "hi");
 
     arrayList = new ArrayList<>(Arrays.asList(array));
@@ -31,15 +33,16 @@ public class ListIterationBenchmark {
   }
 
   @Benchmark
-  @OperationsPerInvocation(100000)
+  @OperationsPerInvocation(NUM_ITERATIONS)
   public void iterateArrayIterable(Blackhole bh) {
     for (String str : array) {
       bh.consume(str);
     }
   }
 
+  @SuppressWarnings("ForLoopReplaceableByForEach")
   @Benchmark
-  @OperationsPerInvocation(100000)
+  @OperationsPerInvocation(10NUM_ITERATIONS0000)
   public void iterateArrayIndexed(Blackhole bh) {
     for (int i = 0; i < array.length; i++) {
       bh.consume(array[i]);
@@ -47,7 +50,7 @@ public class ListIterationBenchmark {
   }
 
   @Benchmark
-  @OperationsPerInvocation(100000)
+  @OperationsPerInvocation(NUM_ITERATIONS)
   public void iterateArrayList(Blackhole bh) {
     for (String str : arrayList) {
       bh.consume(str);
@@ -55,7 +58,7 @@ public class ListIterationBenchmark {
   }
 
   @Benchmark
-  @OperationsPerInvocation(100000)
+  @OperationsPerInvocation(NUM_ITERATIONS)
   public void iterateLinkedList(Blackhole bh) {
     for (String str : linkedList) {
       bh.consume(str);
@@ -63,7 +66,7 @@ public class ListIterationBenchmark {
   }
 
   @Benchmark
-  @OperationsPerInvocation(100000)
+  @OperationsPerInvocation(NUM_ITERATIONS)
   public void iterateCopyOnWriteArrayList(Blackhole bh) {
     for (String str : copyOnWriteArrayList) {
       bh.consume(str);

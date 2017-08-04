@@ -7,13 +7,15 @@ import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode({Mode.Throughput})
+@SuppressWarnings("unused")
+@BenchmarkMode({Mode.All})
 @State(Scope.Thread)
-@Measurement(batchSize = 1, iterations = 5)
-@Warmup(batchSize = 1, iterations = 5)
-@Fork(1)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class SubscriberListBenchmark {
+
+  static final int NUM_ITERATIONS = 100000;
 
   Callback<String>[] array;
   ListBasedSubscriberList<String> arrayList;
@@ -23,39 +25,45 @@ public class SubscriberListBenchmark {
 
   @Setup
   public void setup() {
-    array = new Callback[100000];
+    array = new Callback[NUM_ITERATIONS];
     Arrays.fill(array, new NullCallback<String>());
 
-    arrayList = new ListBasedSubscriberList<>(new ArrayList<>(Arrays.asList(array)));
-    linkedList = new ListBasedSubscriberList<>(new LinkedList<>(Arrays.asList(array)));
-    copyOnWriteArrayList = new ListBasedSubscriberList<>(new CopyOnWriteArrayList<>(Arrays.asList(array)));
+    arrayList = new ListBasedSubscriberList<>(
+        new ArrayList<>(Arrays.asList(array))
+    );
+    linkedList = new ListBasedSubscriberList<>(
+        new LinkedList<>(Arrays.asList(array))
+    );
+    copyOnWriteArrayList = new ListBasedSubscriberList<>(
+        new CopyOnWriteArrayList<>(Arrays.asList(array))
+    );
 
     subscriberList = new SubscriberList<>();
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < NUM_ITERATIONS; i++) {
       subscriberList.add(new NullCallback<String>());
     }
   }
 
   @Benchmark
-  @OperationsPerInvocation(100000)
+  @OperationsPerInvocation(NUM_ITERATIONS)
   public void publishSubscriberList() {
     subscriberList.publish("hi");
   }
 
   @Benchmark
-  @OperationsPerInvocation(100000)
+  @OperationsPerInvocation(NUM_ITERATIONS)
   public void iterateArrayList() {
     arrayList.publish("hi");
   }
 
   @Benchmark
-  @OperationsPerInvocation(100000)
+  @OperationsPerInvocation(NUM_ITERATIONS)
   public void iterateLinkedList() {
     linkedList.publish("hi");
   }
 
   @Benchmark
-  @OperationsPerInvocation(100000)
+  @OperationsPerInvocation(NUM_ITERATIONS)
   public void iterateCopyOnWriteArrayList() {
     copyOnWriteArrayList.publish("hi");
   }
