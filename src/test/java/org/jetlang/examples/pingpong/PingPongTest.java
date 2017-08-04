@@ -1,6 +1,6 @@
 package org.jetlang.examples.pingpong;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.jetlang.core.Disposable;
 import org.jetlang.fibers.Fiber;
 import org.jetlang.fibers.PoolFiberFactory;

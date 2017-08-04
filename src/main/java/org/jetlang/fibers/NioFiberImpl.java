@@ -22,6 +22,7 @@ public class NioFiberImpl implements Runnable, NioFiber {
     private final NioBatchExecutor executor;
     private final WriteFailure writeFailed;
 
+    @SuppressWarnings("EmptyMethod")
     public interface OnBuffer {
 
         <T extends SelectableChannel & WritableByteChannel> void onBufferEnd(T channel);
@@ -226,6 +227,7 @@ public class NioFiberImpl implements Runnable, NioFiber {
 
     }
 
+    @SuppressWarnings("EmptyMethod")
     public interface WriteFailure {
         <T extends SelectableChannel & WritableByteChannel> void onFailure(IOException e, T channel, ByteBuffer data);
     }

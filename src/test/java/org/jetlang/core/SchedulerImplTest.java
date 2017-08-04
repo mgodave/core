@@ -1,6 +1,6 @@
 package org.jetlang.core;
 
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 import org.jetlang.fibers.FiberStub;
 import org.junit.Test;
 

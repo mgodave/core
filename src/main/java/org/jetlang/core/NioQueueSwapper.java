@@ -1,7 +1,6 @@
 package org.jetlang.core;
 
 import java.io.IOException;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Pipe;
 import java.util.LinkedList;

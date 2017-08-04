@@ -32,10 +32,7 @@ public class LockFreeBatchSubscriberPerf {
             int count = 0;
 
             public void onMessage(List<String> message) {
-                for (int val = 0; val < message.size(); val++) {
-                    String m = message.get(val);
-                    count++;
-                }
+                count += message.size();
                 if (count >= total) {
                     latch.countDown();
                     System.out.println("count = " + count);
@@ -43,21 +40,19 @@ public class LockFreeBatchSubscriberPerf {
             }
         };
 
-        Callback<Iterable<String>> recyclingCb = new Callback<Iterable<String>>() {
+        Callback<List<String>> recyclingCb = new Callback<List<String>>() {
             int count = 0;
 
-            public void onMessage(Iterable<String> message) {
-                for (String ignored : message) {
-                    count++;
-                }
+            public void onMessage(List<String> message) {
+                count += message.size();
                 if (count >= total) {
                     latch.countDown();
                     System.out.println("count = " + count);
                 }
             }
         };
-        Channel<String> c = new MemoryChannel<String>();
-        LockFreeBatchSubscriber<String> sub = new LockFreeBatchSubscriber<String>(fiber, cb, 0, TimeUnit.MICROSECONDS);
+        Channel<String> c = new MemoryChannel<>();
+        LockFreeBatchSubscriber<String> sub = new LockFreeBatchSubscriber<>(fiber, cb, 0, TimeUnit.MICROSECONDS);
         //BatchSubscriber<String> sub = new BatchSubscriber<String>(fiber, listCb, 0, TimeUnit.MICROSECONDS);
         //RecyclingBatchSubscriber<String> sub = new RecyclingBatchSubscriber<String>(fiber, recyclingCb, 0, TimeUnit.MICROSECONDS);
 

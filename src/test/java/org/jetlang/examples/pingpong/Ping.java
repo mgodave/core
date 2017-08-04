@@ -53,7 +53,7 @@ public class Ping {
                 //consume all messages.
             }
         };
-        BatchSubscriber<Integer> sub = new BatchSubscriber<Integer>(consumer, onBatch, 0, TimeUnit.MILLISECONDS);
+        BatchSubscriber<Integer> sub = new BatchSubscriber<>(consumer, onBatch, 0, TimeUnit.MILLISECONDS);
         channels.Ping.subscribe(consumer, sub);
 
     }

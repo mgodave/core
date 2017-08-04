@@ -30,7 +30,7 @@ public class BasicExamples {
         PoolFiberFactory fact = new PoolFiberFactory(service);
         Fiber fiber = fact.create();
         fiber.start();
-        Channel<String> channel = new MemoryChannel<String>();
+        Channel<String> channel = new MemoryChannel<>();
 
         final CountDownLatch reset = new CountDownLatch(1);
         Callback<String> runnable = new Callback<String>() {
@@ -51,7 +51,7 @@ public class BasicExamples {
     public void pubSubWithDedicatedThread() throws InterruptedException {
         Fiber fiber = new ThreadFiber();
         fiber.start();
-        Channel<String> channel = new MemoryChannel<String>();
+        Channel<String> channel = new MemoryChannel<>();
 
         final CountDownLatch reset = new CountDownLatch(1);
         Callback<String> runnable = new Callback<String>() {
@@ -109,7 +109,7 @@ public class BasicExamples {
                 two.countDown();
             }
         };
-        Channel<String> channel = new MemoryChannel<String>();
+        Channel<String> channel = new MemoryChannel<>();
         Disposable unsub = channel.subscribe(fiber, runnable);
         channel.publish("one");
         Assert.assertTrue(reset.await(5000, TimeUnit.MILLISECONDS));
@@ -123,7 +123,7 @@ public class BasicExamples {
     public void pubSubWithDedicatedThreadWithFilter() throws InterruptedException {
         Fiber fiber = new ThreadFiber();
         fiber.start();
-        Channel<Integer> channel = new MemoryChannel<Integer>();
+        Channel<Integer> channel = new MemoryChannel<>();
 
         final CountDownLatch reset = new CountDownLatch(1);
         Callback<Integer> onMsg = new Callback<Integer>() {
@@ -139,7 +139,7 @@ public class BasicExamples {
                 return msg % 2 == 0;
             }
         };
-        ChannelSubscription<Integer> sub = new ChannelSubscription<Integer>(fiber, onMsg, filter);
+        ChannelSubscription<Integer> sub = new ChannelSubscription<>(fiber, onMsg, filter);
         channel.subscribe(sub);
         channel.publish(1);
         channel.publish(2);
@@ -155,7 +155,7 @@ public class BasicExamples {
     public void batching() throws InterruptedException {
         Fiber fiber = new ThreadFiber();
         fiber.start();
-        MemoryChannel<Integer> counter = new MemoryChannel<Integer>();
+        MemoryChannel<Integer> counter = new MemoryChannel<>();
         final CountDownLatch reset = new CountDownLatch(1);
         Callback<List<Integer>> cb = new Callback<List<Integer>>() {
             int total = 0;
@@ -168,7 +168,7 @@ public class BasicExamples {
             }
         };
 
-        BatchSubscriber<Integer> batch = new BatchSubscriber<Integer>(fiber, cb, 0, TimeUnit.MILLISECONDS);
+        BatchSubscriber<Integer> batch = new BatchSubscriber<>(fiber, cb, 0, TimeUnit.MILLISECONDS);
         counter.subscribe(batch);
 
         for (int i = 0; i < 10; i++) {
@@ -183,7 +183,7 @@ public class BasicExamples {
     public void batchingWithKey() throws InterruptedException {
         Fiber fiber = new ThreadFiber();
         fiber.start();
-        Channel<Integer> counter = new MemoryChannel<Integer>();
+        Channel<Integer> counter = new MemoryChannel<>();
         final CountDownLatch reset = new CountDownLatch(1);
         Callback<Map<String, Integer>> cb = new Callback<Map<String, Integer>>() {
             public void onMessage(Map<String, Integer> batch) {
@@ -198,7 +198,7 @@ public class BasicExamples {
                 return msg.toString();
             }
         };
-        KeyedBatchSubscriber<String, Integer> batch = new KeyedBatchSubscriber<String, Integer>(fiber, cb, 0, TimeUnit.MILLISECONDS, keyResolver);
+        KeyedBatchSubscriber<String, Integer> batch = new KeyedBatchSubscriber<>(fiber, cb, 0, TimeUnit.MILLISECONDS, keyResolver);
         counter.subscribe(batch);
 
         for (int i = 0; i < 10; i++) {
@@ -211,9 +211,9 @@ public class BasicExamples {
 
     @Test
     public void compositeChannel() throws InterruptedException {
-        Channel<String> channel = new MemoryChannel<String>();
-        Channel<String> channel2 = new MemoryChannel<String>();
-        Channel<String> comp = new CompositeChannel<String>(channel, channel2);
+        Channel<String> channel = new MemoryChannel<>();
+        Channel<String> channel2 = new MemoryChannel<>();
+        Channel<String> comp = new CompositeChannel<>(channel, channel2);
         final CountDownLatch latch = new CountDownLatch(2);
         Callback<String> sub = new Callback<String>() {
 
@@ -239,7 +239,7 @@ public class BasicExamples {
         Fiber reply = new ThreadFiber();
         req.start();
         reply.start();
-        RequestChannel<String, Integer> channel = new MemoryRequestChannel<String, Integer>();
+        RequestChannel<String, Integer> channel = new MemoryRequestChannel<>();
         Callback<Request<String, Integer>> onReq = new Callback<Request<String, Integer>>() {
             public void onMessage(Request<String, Integer> message) {
                 assertEquals("hello", message.getRequest());
@@ -266,8 +266,8 @@ public class BasicExamples {
     public void requestReplyWithBlockingQueue() throws InterruptedException {
         Fiber fiber = new ThreadFiber();
         fiber.start();
-        BlockingQueue<String> replyQueue = new ArrayBlockingQueue<String>(1);
-        MemoryChannel<BlockingQueue<String>> channel = new MemoryChannel<BlockingQueue<String>>();
+        BlockingQueue<String> replyQueue = new ArrayBlockingQueue<>(1);
+        MemoryChannel<BlockingQueue<String>> channel = new MemoryChannel<>();
         Callback<BlockingQueue<String>> replyCb = new Callback<BlockingQueue<String>>() {
             public void onMessage(BlockingQueue<String> message) {
                 try {

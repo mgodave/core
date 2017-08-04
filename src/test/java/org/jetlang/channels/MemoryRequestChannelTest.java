@@ -28,7 +28,7 @@ public class MemoryRequestChannelTest {
     private static ExecutorService pool;
     private static PoolFiberFactory fiberPool;
 
-    private List<Fiber> active = new ArrayList<Fiber>();
+    private List<Fiber> active = new ArrayList<>();
 
     @BeforeClass
     public static void createPool() {
@@ -58,7 +58,7 @@ public class MemoryRequestChannelTest {
     public void simpleRequestResponse() throws InterruptedException {
         Fiber req = startFiber();
         Fiber reply = startFiber();
-        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<String, Integer>();
+        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<>();
         Callback<Request<String, Integer>> onReq = new Callback<Request<String, Integer>>() {
             public void onMessage(Request<String, Integer> message) {
                 message.reply(1);
@@ -80,7 +80,7 @@ public class MemoryRequestChannelTest {
     @Test
     public void simpleRequestResponseWithTimeout() throws InterruptedException {
         Fiber req = startFiber();
-        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<String, Integer>();
+        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<>();
 
         final CountDownLatch done = new CountDownLatch(1);
         Callback<Integer> onReply = new Callback<Integer>() {
@@ -100,7 +100,7 @@ public class MemoryRequestChannelTest {
     @Test
     public void requestForSingleReplyThatTimesOutShouldEndRequest() throws InterruptedException {
         Fiber req = startFiber();
-        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<String, Integer>();
+        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<>();
 
         Fiber reply = startFiber();
         Callback<Request<String, Integer>> onReq = new Callback<Request<String, Integer>>() {
@@ -138,7 +138,7 @@ public class MemoryRequestChannelTest {
     public void simpleRequestResponseWithEndSession() throws InterruptedException {
         Fiber req = startFiber();
         Fiber reply = startFiber();
-        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<String, Integer>();
+        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<>();
         final CountDownLatch done = new CountDownLatch(1);
         Callback<Request<String, Integer>> onReq = new Callback<Request<String, Integer>>() {
             public void onMessage(Request<String, Integer> message) {
@@ -170,7 +170,7 @@ public class MemoryRequestChannelTest {
     public void fiveMessagesRequestResponseWithEndSession() throws InterruptedException {
         Fiber req = startFiber();
         Fiber reply = startFiber();
-        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<String, Integer>();
+        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<>();
         final CountDownLatch done = new CountDownLatch(1);
         Callback<Request<String, Integer>> onReq = new Callback<Request<String, Integer>>() {
             public void onMessage(Request<String, Integer> message) {
@@ -188,7 +188,7 @@ public class MemoryRequestChannelTest {
 
         final CountDownLatch rcv = new CountDownLatch(1);
 
-        AsyncRequest<String, Integer> async = new AsyncRequest<String, Integer>(req);
+        AsyncRequest<String, Integer> async = new AsyncRequest<>(req);
         async.setResponseCount(5);
         Callback<List<Integer>> onReply = new Callback<List<Integer>>() {
             public void onMessage(List<Integer> message) {
@@ -205,7 +205,7 @@ public class MemoryRequestChannelTest {
     @Test
     public void asyncRequestTimeout() throws InterruptedException {
         Fiber req = startFiber();
-        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<String, Integer>();
+        MemoryRequestChannel<String, Integer> channel = new MemoryRequestChannel<>();
 
         final CountDownLatch timeout = new CountDownLatch(1);
         Callback<List<Integer>> onTimeout = new Callback<List<Integer>>() {
@@ -219,7 +219,7 @@ public class MemoryRequestChannelTest {
                 fail();
             }
         };
-        AsyncRequest<String, Integer> async = new AsyncRequest<String, Integer>(req);
+        AsyncRequest<String, Integer> async = new AsyncRequest<>(req);
         async.setTimeout(onTimeout, 10, TimeUnit.MILLISECONDS)
                 .publish(channel, "hello", onResp);
         assertTrue(timeout.await(10, TimeUnit.SECONDS));

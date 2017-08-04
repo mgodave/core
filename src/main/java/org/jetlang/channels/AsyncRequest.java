@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  * Time: 1:31:46 PM
  */
 public class AsyncRequest<R, V> {
-    private Fiber target;
+    private final Fiber target;
     private BatchTimeout<V> timeout;
     private int responses = 1;
 

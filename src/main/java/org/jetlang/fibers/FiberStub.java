@@ -13,9 +13,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class FiberStub implements Fiber {
 
-    public List<Disposable> Disposables = new ArrayList<>();
-    public List<Runnable> Pending = new ArrayList<>();
-    public List<ScheduledEvent> Scheduled = new ArrayList<>();
+    public final List<Disposable> Disposables = new ArrayList<>();
+    public final List<Runnable> Pending = new ArrayList<>();
+    public final List<ScheduledEvent> Scheduled = new ArrayList<>();
 
     public void start() {
     }
@@ -129,9 +129,7 @@ public class FiberStub implements Fiber {
             if (interval != event.interval) return false;
             if (isRecurring != event.isRecurring) return false;
             if (runnable != null ? !runnable.equals(event.runnable) : event.runnable != null) return false;
-            if (timeUnit != event.timeUnit) return false;
-
-            return true;
+            return timeUnit == event.timeUnit;
         }
 
         public int hashCode() {
