@@ -19,6 +19,7 @@ import static org.junit.Assert.assertTrue;
 public class SubscriberListTest {
 
   @Test
+  @Ignore
   public void addAndRemove() {
     SubscriberList<String> list = new SubscriberList<>();
     final List<String> received = new ArrayList<>();
@@ -41,6 +42,7 @@ public class SubscriberListTest {
   }
 
   @Test
+  @Ignore
   public void addAndRemoveWithTwo() {
     SubscriberList<String> list = new SubscriberList<>();
     final List<String> received = new ArrayList<>();
@@ -63,8 +65,33 @@ public class SubscriberListTest {
     assertEquals(3, received.size());
   }
 
+  static void iterate(Callback<String>[] cbs) {
+    for (Callback<String> each : cbs) {
+      each.onMessage("hello");
+    }
+  }
+
   @Test
-//  @Ignore
+  public void perfWithArrayTest() {
+    Callback<String>[] list = new Callback[3];
+    Callback<String> cb = new Callback<String>() {
+      public void onMessage(String message) {
+      }
+    };
+
+    list[0] = cb;
+    list[1] = cb;
+    list[2] = cb;
+
+    Long start = System.currentTimeMillis();
+    for (int i = 0; i < 100000000; i++) {
+      iterate(list);
+    }
+    System.out.println(System.currentTimeMillis() - start);
+
+  }
+
+  @Test
   public void perfWithLinkedListTest() {
     List<Callback<String>> list = new LinkedList<>();
     Callback<String> cb = new Callback<String>() {
@@ -87,7 +114,6 @@ public class SubscriberListTest {
   }
 
   @Test
-//  @Ignore
   public void perfWithArrayListTest() {
     List<Callback<String>> list = new ArrayList<>(3);
     Callback<String> cb = new Callback<String>() {
@@ -110,7 +136,6 @@ public class SubscriberListTest {
   }
 
   @Test
-//  @Ignore
   public void perfWithArrayCopyTest() {
     SubscriberList<String> list = new SubscriberList<>();
     Callback<String> cb = new Callback<String>() {
@@ -131,7 +156,6 @@ public class SubscriberListTest {
   }
 
   @Test
-//  @Ignore
   public void perfTestWithCopyOnWrite() {
     CopyOnWriteArrayList<Callback<String>> list = new CopyOnWriteArrayList<>();
     Callback<String> cb = new Callback<String>() {
