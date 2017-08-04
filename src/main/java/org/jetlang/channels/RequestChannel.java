@@ -11,10 +11,10 @@ import org.jetlang.core.DisposingExecutor;
  */
 public interface RequestChannel<R, V> {
 
-    Disposable subscribe(DisposingExecutor fiber, Callback<Request<R, V>> onRequest);
+  Disposable subscribe(DisposingExecutor fiber, Callback<Request<R, V>> onRequest);
 
-    Disposable publish(DisposingExecutor fiber, R request, Callback<V> reply);
+  Disposable publish(DisposingExecutor fiber, R request, Callback<V> reply);
 
-    Disposable subscribe(DisposingExecutor fiber, Callback<Request<R, V>> onRequest,
-                         Callback<SessionClosed<R>> onRequestEnd);
+  Disposable subscribe(DisposingExecutor fiber, Callback<Request<R, V>> onRequest,
+                       Callback<SessionClosed<R>> onRequestEnd);
 }

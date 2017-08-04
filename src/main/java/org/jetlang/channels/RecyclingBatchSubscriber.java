@@ -14,69 +14,69 @@ import java.util.concurrent.locks.ReentrantLock;
  * Batches events for the consuming thread.
  */
 public class RecyclingBatchSubscriber<T> extends BaseSubscription<T> {
-    private final Lock _lock = new ReentrantLock();
-    private final Fiber _queue;
-    private final Callback<List<T>> _receive;
-    private final int _interval;
-    private final TimeUnit _timeUnit;
-    private List<T> _pending = new LinkedList<>();
-    private List<T> _active = new LinkedList<>();
-    private final Runnable _flushRunnable;
+  private final Lock _lock = new ReentrantLock();
+  private final Fiber _queue;
+  private final Callback<List<T>> _receive;
+  private final int _interval;
+  private final TimeUnit _timeUnit;
+  private final Runnable _flushRunnable;
+  private List<T> _pending = new LinkedList<>();
+  private List<T> _active = new LinkedList<>();
 
-    public RecyclingBatchSubscriber(Fiber queue, Callback<List<T>> receive,
-                                    Filter<T> filter,
-                                    int interval, TimeUnit timeUnit) {
-        super(queue, filter);
-        _queue = queue;
-        _receive = receive;
-        _interval = interval;
-        _timeUnit = timeUnit;
-        _flushRunnable = new Runnable() {
-            public void run() {
-                flush();
-            }
+  public RecyclingBatchSubscriber(Fiber queue, Callback<List<T>> receive,
+                                  Filter<T> filter,
+                                  int interval, TimeUnit timeUnit) {
+    super(queue, filter);
+    _queue = queue;
+    _receive = receive;
+    _interval = interval;
+    _timeUnit = timeUnit;
+    _flushRunnable = new Runnable() {
+      public void run() {
+        flush();
+      }
 
-            @Override
-            public String toString() {
-                return "Flushing " + RecyclingBatchSubscriber.this + " via " + _receive.toString();
-            }
-        };
+      @Override
+      public String toString() {
+        return "Flushing " + RecyclingBatchSubscriber.this + " via " + _receive.toString();
+      }
+    };
+  }
+
+  public RecyclingBatchSubscriber(Fiber queue, Callback<List<T>> receive,
+                                  int interval, TimeUnit timeUnit) {
+    this(queue, receive, null, interval, timeUnit);
+  }
+
+  /**
+   * Receives message and batches as needed.
+   */
+  @Override
+  protected void onMessageOnProducerThread(T msg) {
+    _lock.lock();
+    try {
+      if (_pending.isEmpty()) {
+        _queue.schedule(_flushRunnable, _interval, _timeUnit);
+      }
+      _pending.add(msg);
+    } finally {
+      _lock.unlock();
     }
+  }
 
-    public RecyclingBatchSubscriber(Fiber queue, Callback<List<T>> receive,
-                                    int interval, TimeUnit timeUnit) {
-        this(queue, receive, null, interval, timeUnit);
+  private void flush() {
+    _lock.lock();
+    try {
+      List<T> nowPending = _active;
+      _active = _pending;
+      _pending = nowPending;
+    } finally {
+      _lock.unlock();
     }
-
-    /**
-     * Receives message and batches as needed.
-     */
-    @Override
-    protected void onMessageOnProducerThread(T msg) {
-        _lock.lock();
-        try {
-            if (_pending.isEmpty()) {
-                _queue.schedule(_flushRunnable, _interval, _timeUnit);
-            }
-            _pending.add(msg);
-        } finally {
-            _lock.unlock();
-        }
+    try {
+      _receive.onMessage(_active);
+    } finally {
+      _active.clear();
     }
-
-    private void flush() {
-        _lock.lock();
-        try {
-            List<T> nowPending = _active;
-            _active = _pending;
-            _pending = nowPending;
-        } finally {
-            _lock.unlock();
-        }
-        try {
-            _receive.onMessage(_active);
-        } finally {
-            _active.clear();
-        }
-    }
+  }
 }

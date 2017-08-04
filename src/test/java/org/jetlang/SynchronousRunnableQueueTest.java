@@ -1,8 +1,9 @@
 package org.jetlang;
 
 import org.jetlang.core.SynchronousDisposingExecutor;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * User: mrettig
@@ -11,17 +12,17 @@ import org.junit.Test;
  */
 public class SynchronousRunnableQueueTest {
 
-    @Test
-    public void execution() {
-        SynchronousDisposingExecutor queue = new SynchronousDisposingExecutor();
-        final boolean[] executed = new boolean[1];
-        Runnable run = new Runnable() {
+  @Test
+  public void execution() {
+    SynchronousDisposingExecutor queue = new SynchronousDisposingExecutor();
+    final boolean[] executed = new boolean[1];
+    Runnable run = new Runnable() {
 
-            public void run() {
-                executed[0] = true;
-            }
-        };
-        queue.execute(run);
-        assertTrue(executed[0]);
-    }
+      public void run() {
+        executed[0] = true;
+      }
+    };
+    queue.execute(run);
+    assertTrue(executed[0]);
+  }
 }

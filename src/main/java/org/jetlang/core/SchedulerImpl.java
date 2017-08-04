@@ -8,163 +8,162 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class SchedulerImpl implements Scheduler {
 
-    private final ScheduledExecutorService _scheduler;
-    private final Executor _queue;
+  private final ScheduledExecutorService _scheduler;
+  private final Executor _queue;
 
-    public SchedulerImpl(Executor queue, ScheduledExecutorService service) {
-        _queue = queue;
-        _scheduler = service;
-    }
+  public SchedulerImpl(Executor queue, ScheduledExecutorService service) {
+    _queue = queue;
+    _scheduler = service;
+  }
 
-    public SchedulerImpl(Executor queue){
-        this(queue, createSchedulerThatIgnoresEventsAfterStop());
-    }
+  public SchedulerImpl(Executor queue) {
+    this(queue, createSchedulerThatIgnoresEventsAfterStop());
+  }
 
-    public static ScheduledThreadPoolExecutor createSchedulerThatIgnoresEventsAfterStop() {
-        ThreadFactory fact = new DaemonThreadFactory();
-        return createSchedulerThatIgnoresEventsAfterStop(fact);
-    }
+  public SchedulerImpl(DisposingExecutor queue, ScheduledExecutorService scheduler) {
+    _queue = queue;
+    _scheduler = scheduler;
+  }
 
-    public static ScheduledThreadPoolExecutor createSchedulerThatIgnoresEventsAfterStop(ThreadFactory fact) {
-        ScheduledThreadPoolExecutor s = new ScheduledThreadPoolExecutor(1, fact);
-        s.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
-        s.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
-        RejectedExecutionHandler handler = new RejectedExecutionHandler() {
-            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                if (!executor.isShutdown()) {
-                    throw new RejectedExecutionException("Rejected Execution: " + r);
-                }
-                //ignore tasks if shutdown already.
-            }
-        };
-        s.setRejectedExecutionHandler(handler);
-        return s;
-    }
+  public static ScheduledThreadPoolExecutor createSchedulerThatIgnoresEventsAfterStop() {
+    ThreadFactory fact = new DaemonThreadFactory();
+    return createSchedulerThatIgnoresEventsAfterStop(fact);
+  }
 
-    public SchedulerImpl(DisposingExecutor queue, ScheduledExecutorService scheduler) {
-        _queue = queue;
-        _scheduler = scheduler;
-    }
-
-    public Disposable schedule(Runnable _command, long delay, TimeUnit unit) {
-        if (delay == 0) {
-            PendingCommand c = new PendingCommand(_command);
-            _queue.execute(c);
-            return c;
-        } else {
-            PendingCommand command = new PendingCommand(_command);
-            return new ScheduledFutureControl(_scheduler.schedule(new ExecuteCommand(command), delay, unit), command);
+  public static ScheduledThreadPoolExecutor createSchedulerThatIgnoresEventsAfterStop(ThreadFactory fact) {
+    ScheduledThreadPoolExecutor s = new ScheduledThreadPoolExecutor(1, fact);
+    s.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+    s.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
+    RejectedExecutionHandler handler = new RejectedExecutionHandler() {
+      public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+        if (!executor.isShutdown()) {
+          throw new RejectedExecutionException("Rejected Execution: " + r);
         }
+        //ignore tasks if shutdown already.
+      }
+    };
+    s.setRejectedExecutionHandler(handler);
+    return s;
+  }
+
+  public Disposable schedule(Runnable _command, long delay, TimeUnit unit) {
+    if (delay == 0) {
+      PendingCommand c = new PendingCommand(_command);
+      _queue.execute(c);
+      return c;
+    } else {
+      PendingCommand command = new PendingCommand(_command);
+      return new ScheduledFutureControl(_scheduler.schedule(new ExecuteCommand(command), delay, unit), command);
     }
+  }
 
-    public Disposable scheduleAtFixedRate(Runnable _command, long initialDelay, long interval, TimeUnit unit) {
-        PendingCommand command = new PendingCommand(_command);
-        return new ScheduledFutureControl(
-                _scheduler.scheduleAtFixedRate(new ExecuteCommand(command), initialDelay, interval, unit),
-                command);
-    }
+  public Disposable scheduleAtFixedRate(Runnable _command, long initialDelay, long interval, TimeUnit unit) {
+    PendingCommand command = new PendingCommand(_command);
+    return new ScheduledFutureControl(
+        _scheduler.scheduleAtFixedRate(new ExecuteCommand(command), initialDelay, interval, unit),
+        command);
+  }
 
-    private class FixedDelayTask implements Runnable, Disposable {
-        private final AtomicBoolean cancelled = new AtomicBoolean(false);
-        private final Runnable target;
-        private final long interval;
-        private final TimeUnit unit;
-        private volatile Disposable scheduledEvent;
+  public Disposable scheduleWithFixedDelay(final Runnable command, long initialDelay, long interval, TimeUnit unit) {
+    FixedDelayTask fixedDelayTask = new FixedDelayTask(command, interval, unit);
+    fixedDelayTask.scheduledEvent = schedule(fixedDelayTask, initialDelay, unit);
+    return fixedDelayTask;
+  }
 
-        public FixedDelayTask(Runnable target, long interval, TimeUnit unit) {
-            this.target = target;
-            this.interval = interval;
-            this.unit = unit;
-        }
+  public void dispose() {
+    _scheduler.shutdown();
+  }
 
-        public void dispose() {
-            if (cancelled.compareAndSet(false, true)) {
-                scheduledEvent.dispose();
-            }
-        }
+  private static class PendingCommand implements Disposable, Runnable {
+    private final Runnable _toExecute;
+    private volatile boolean _cancelled;
 
-        public void run() {
-            if (cancelled.get()) return;
-            try {
-                target.run();
-            } finally {
-                if (!cancelled.get()) {
-                    scheduledEvent = schedule(this, interval, unit);
-                }
-            }
-        }
-
-        @Override
-        public String toString() {
-            return target.toString();
-        }
-    }
-
-    public Disposable scheduleWithFixedDelay(final Runnable command, long initialDelay, long interval, TimeUnit unit) {
-        FixedDelayTask fixedDelayTask = new FixedDelayTask(command, interval, unit);
-        fixedDelayTask.scheduledEvent = schedule(fixedDelayTask, initialDelay, unit);
-        return fixedDelayTask;
+    public PendingCommand(Runnable toExecute) {
+      _toExecute = toExecute;
     }
 
     public void dispose() {
-        _scheduler.shutdown();
+      _cancelled = true;
     }
 
-
-    private class ExecuteCommand implements Runnable {
-        private final Runnable command;
-
-        public ExecuteCommand(Runnable command) {
-            this.command = command;
-        }
-
-        public void run() {
-            _queue.execute(command);
-        }
-
-        @Override
-        public String toString() {
-            return command.toString();
-        }
+    public void run() {
+      if (!_cancelled) {
+        _toExecute.run();
+      }
     }
 
-    private static class PendingCommand implements Disposable, Runnable {
-        private final Runnable _toExecute;
-        private volatile boolean _cancelled;
+    @Override
+    public String toString() {
+      return _toExecute.toString();
+    }
+  }
 
-        public PendingCommand(Runnable toExecute) {
-            _toExecute = toExecute;
-        }
+  private class FixedDelayTask implements Runnable, Disposable {
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
+    private final Runnable target;
+    private final long interval;
+    private final TimeUnit unit;
+    private volatile Disposable scheduledEvent;
 
-        public void dispose() {
-            _cancelled = true;
-        }
-
-        public void run() {
-            if (!_cancelled) {
-                _toExecute.run();
-            }
-        }
-
-        @Override
-        public String toString() {
-            return _toExecute.toString();
-        }
+    public FixedDelayTask(Runnable target, long interval, TimeUnit unit) {
+      this.target = target;
+      this.interval = interval;
+      this.unit = unit;
     }
 
-    private final class ScheduledFutureControl implements Disposable {
-        private final ScheduledFuture<?> future;
-        private final Disposable command;
-
-        public ScheduledFutureControl(ScheduledFuture<?> future, Disposable command) {
-            this.future = future;
-            this.command = command;
-        }
-
-        public void dispose() {
-            command.dispose();
-            future.cancel(false);
-        }
+    public void dispose() {
+      if (cancelled.compareAndSet(false, true)) {
+        scheduledEvent.dispose();
+      }
     }
+
+    public void run() {
+      if (cancelled.get()) return;
+      try {
+        target.run();
+      } finally {
+        if (!cancelled.get()) {
+          scheduledEvent = schedule(this, interval, unit);
+        }
+      }
+    }
+
+    @Override
+    public String toString() {
+      return target.toString();
+    }
+  }
+
+  private class ExecuteCommand implements Runnable {
+    private final Runnable command;
+
+    public ExecuteCommand(Runnable command) {
+      this.command = command;
+    }
+
+    public void run() {
+      _queue.execute(command);
+    }
+
+    @Override
+    public String toString() {
+      return command.toString();
+    }
+  }
+
+  private final class ScheduledFutureControl implements Disposable {
+    private final ScheduledFuture<?> future;
+    private final Disposable command;
+
+    public ScheduledFutureControl(ScheduledFuture<?> future, Disposable command) {
+      this.future = future;
+      this.command = command;
+    }
+
+    public void dispose() {
+      command.dispose();
+      future.cancel(false);
+    }
+  }
 }
 

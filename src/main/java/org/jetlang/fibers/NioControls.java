@@ -7,13 +7,13 @@ import java.nio.channels.WritableByteChannel;
 
 public interface NioControls {
 
-    Selector getSelector();
+  Selector getSelector();
 
-    void addHandler(NioChannelHandler handler);
+  void addHandler(NioChannelHandler handler);
 
-    <T extends SelectableChannel & WritableByteChannel> void write(T channel, ByteBuffer buffer);
+  <T extends SelectableChannel & WritableByteChannel> void write(T channel, ByteBuffer buffer);
 
-    boolean isRegistered(SelectableChannel channel);
+  boolean isRegistered(SelectableChannel channel);
 
-    boolean close(SelectableChannel channel);
+  boolean close(SelectableChannel channel);
 }

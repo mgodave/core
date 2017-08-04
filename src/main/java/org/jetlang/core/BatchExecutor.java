@@ -7,5 +7,5 @@ package org.jetlang.core;
  * @author mrettig
  */
 public interface BatchExecutor {
-    void execute(Iterable<Runnable> toExecute);
+  void execute(Iterable<Runnable> toExecute);
 }

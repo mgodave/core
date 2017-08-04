@@ -10,52 +10,52 @@ import org.jetlang.core.DisposingExecutor;
  */
 public class CompositeChannel<T> implements Channel<T> {
 
-    private final Channel<T>[] channels;
+  private final Channel<T>[] channels;
 
-    public CompositeChannel(Channel<T>... channels) {
-        this.channels = channels;
-    }
+  public CompositeChannel(Channel<T>... channels) {
+    this.channels = channels;
+  }
 
 
-    public Disposable subscribe(DisposingExecutor executor, Callback<T> receive) {
-        final Disposable[] all = new Disposable[channels.length];
-        Disposable d = new Disposable() {
+  public Disposable subscribe(DisposingExecutor executor, Callback<T> receive) {
+    final Disposable[] all = new Disposable[channels.length];
+    Disposable d = new Disposable() {
 
-            public void dispose() {
-                for (Disposable disposable : all) {
-                    disposable.dispose();
-                }
-            }
-        };
-
-        for (int i = 0; i < channels.length; i++) {
-            all[i] = channels[i].subscribe(executor, receive);
+      public void dispose() {
+        for (Disposable disposable : all) {
+          disposable.dispose();
         }
+      }
+    };
 
-        return d;
+    for (int i = 0; i < channels.length; i++) {
+      all[i] = channels[i].subscribe(executor, receive);
     }
 
-    public Disposable subscribe(Subscribable<T> sub) {
-        final Disposable[] all = new Disposable[channels.length];
-        Disposable d = new Disposable() {
+    return d;
+  }
 
-            public void dispose() {
-                for (Disposable disposable : all) {
-                    disposable.dispose();
-                }
-            }
-        };
+  public Disposable subscribe(Subscribable<T> sub) {
+    final Disposable[] all = new Disposable[channels.length];
+    Disposable d = new Disposable() {
 
-        for (int i = 0; i < channels.length; i++) {
-            all[i] = channels[i].subscribe(sub);
+      public void dispose() {
+        for (Disposable disposable : all) {
+          disposable.dispose();
         }
+      }
+    };
 
-        return d;
+    for (int i = 0; i < channels.length; i++) {
+      all[i] = channels[i].subscribe(sub);
     }
 
-    public void publish(T msg) {
-        for (Channel<T> channel : channels) {
-            channel.publish(msg);
-        }
+    return d;
+  }
+
+  public void publish(T msg) {
+    for (Channel<T> channel : channels) {
+      channel.publish(msg);
     }
+  }
 }

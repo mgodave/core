@@ -9,6 +9,6 @@ import org.jetlang.core.DisposingExecutor;
  */
 public interface Subscribable<T> extends Callback<T> {
 
-    DisposingExecutor getQueue();
+  DisposingExecutor getQueue();
 
 }

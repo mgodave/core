@@ -9,11 +9,11 @@ import java.util.concurrent.ThreadFactory;
  * @author mrettig
  */
 class DaemonThreadFactory implements ThreadFactory {
-    private final ThreadFactory factory = Executors.defaultThreadFactory();
+  private final ThreadFactory factory = Executors.defaultThreadFactory();
 
-    public Thread newThread(Runnable r) {
-        Thread t = factory.newThread(r);
-        t.setDaemon(true);
-        return t;
-    }
+  public Thread newThread(Runnable r) {
+    Thread t = factory.newThread(r);
+    t.setDaemon(true);
+    return t;
+  }
 }

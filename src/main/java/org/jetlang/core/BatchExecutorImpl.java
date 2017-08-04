@@ -6,9 +6,9 @@ package org.jetlang.core;
  * @author mrettig
  */
 public class BatchExecutorImpl implements BatchExecutor {
-    public void execute(Iterable<Runnable> toExecute) {
-        for (Runnable runnable : toExecute) {
-            runnable.run();
-        }
+  public void execute(Iterable<Runnable> toExecute) {
+    for (Runnable runnable : toExecute) {
+      runnable.run();
     }
+  }
 }

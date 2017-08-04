@@ -17,133 +17,133 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 class PoolFiber implements Fiber {
 
-    private final SynchronizedQueue _queue = new SynchronizedQueue();
-    private final Executor _flushExecutor;
-    private final AtomicReference<ExecutionState> _started = new AtomicReference<>(ExecutionState.Created);
-    private final BatchExecutor _commandExecutor;
-    private final Collection<Disposable> _disposables = Collections.synchronizedList(new ArrayList<Disposable>());
-    private final SchedulerImpl _scheduler;
-    private final Runnable _flushRunnable;
-    private List<Runnable> buffer = new LinkedList<>();
+  private final SynchronizedQueue _queue = new SynchronizedQueue();
+  private final Executor _flushExecutor;
+  private final AtomicReference<ExecutionState> _started = new AtomicReference<>(ExecutionState.Created);
+  private final BatchExecutor _commandExecutor;
+  private final Collection<Disposable> _disposables = Collections.synchronizedList(new ArrayList<Disposable>());
+  private final SchedulerImpl _scheduler;
+  private final Runnable _flushRunnable;
+  private List<Runnable> buffer = new LinkedList<>();
 
-    public PoolFiber(Executor pool, BatchExecutor executor, ScheduledExecutorService scheduler) {
-        _flushExecutor = pool;
-        _commandExecutor = executor;
-        _scheduler = new SchedulerImpl(this, scheduler);
-        _flushRunnable = new Runnable() {
-            public void run() {
-                flush();
-            }
-        };
+  public PoolFiber(Executor pool, BatchExecutor executor, ScheduledExecutorService scheduler) {
+    _flushExecutor = pool;
+    _commandExecutor = executor;
+    _scheduler = new SchedulerImpl(this, scheduler);
+    _flushRunnable = new Runnable() {
+      public void run() {
+        flush();
+      }
+    };
+  }
+
+  public void execute(Runnable commands) {
+    if (_started.get() == ExecutionState.Stopped) {
+      return;
+    }
+    _queue.put(commands);
+  }
+
+  private void flush() {
+    List<Runnable> swap = _queue.swap(buffer);
+    while (swap != null) {
+      buffer = swap;
+      _commandExecutor.execute(buffer);
+      buffer.clear();
+      swap = _queue.swap(buffer);
+    }
+  }
+
+  public void start() {
+    ExecutionState state = _started.get();
+
+    if (state == ExecutionState.Running) {
+      throw new RuntimeException("Already Started");
     }
 
-    private class SynchronizedQueue {
-        private boolean running = false;
-        private boolean flushPending = false;
-        private List<Runnable> queue = new LinkedList<>();
-
-        private synchronized void setRunning(boolean newValue) {
-            running = newValue;
+    if (_started.compareAndSet(state, ExecutionState.Running)) {
+      _queue.setRunning(true);
+      execute(new Runnable() {
+        public void run() {
+          //flush any pending events in execute
         }
+      });
+    }
+  }
 
-        private synchronized void put(Runnable r) {
-            queue.add(r);
-            if (running && !flushPending) {
-                _flushExecutor.execute(_flushRunnable);
-                flushPending = true;
-            }
-        }
+  public void dispose() {
+    _queue.setRunning(false);
+    _started.set(ExecutionState.Stopped);
+    synchronized (_disposables) {
+      //copy list to prevent concurrent mod
+      for (Disposable r : _disposables.toArray(new Disposable[_disposables.size()])) {
+        r.dispose();
+      }
+    }
+  }
 
-        private synchronized List<Runnable> swap(List<Runnable> buffer) {
-            if (queue.isEmpty() || !running) {
-                flushPending = false;
-                return null;
-            }
-            List<Runnable> toReturn = queue;
-            queue = buffer;
-            return toReturn;
-        }
+  public void add(Disposable runOnStop) {
+    _disposables.add(runOnStop);
+  }
+
+  public boolean remove(Disposable disposable) {
+    return _disposables.remove(disposable);
+  }
+
+  public int size() {
+    return _disposables.size();
+  }
+
+  public Disposable schedule(Runnable command, long delay, TimeUnit unit) {
+    return _scheduler.schedule(command, delay, unit);
+  }
+
+  public Disposable scheduleAtFixedRate(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+    return register(_scheduler.scheduleAtFixedRate(command, initialDelay, delay, unit));
+  }
+
+  public Disposable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+    return register(_scheduler.scheduleWithFixedDelay(command, initialDelay, delay, unit));
+  }
+
+  private Disposable register(final Disposable stopper) {
+    Disposable wrapper = new Disposable() {
+      public void dispose() {
+        stopper.dispose();
+        remove(this);
+      }
+    };
+    //scheduler is shared so tasks removed individually
+    add(wrapper);
+    return wrapper;
+
+  }
+
+  private class SynchronizedQueue {
+    private boolean running = false;
+    private boolean flushPending = false;
+    private List<Runnable> queue = new LinkedList<>();
+
+    private synchronized void setRunning(boolean newValue) {
+      running = newValue;
     }
 
-    public void execute(Runnable commands) {
-        if (_started.get() == ExecutionState.Stopped) {
-            return;
-        }
-        _queue.put(commands);
+    private synchronized void put(Runnable r) {
+      queue.add(r);
+      if (running && !flushPending) {
+        _flushExecutor.execute(_flushRunnable);
+        flushPending = true;
+      }
     }
 
-    private void flush() {
-        List<Runnable> swap = _queue.swap(buffer);
-        while (swap != null) {
-            buffer = swap;
-            _commandExecutor.execute(buffer);
-            buffer.clear();
-            swap = _queue.swap(buffer);
-        }
+    private synchronized List<Runnable> swap(List<Runnable> buffer) {
+      if (queue.isEmpty() || !running) {
+        flushPending = false;
+        return null;
+      }
+      List<Runnable> toReturn = queue;
+      queue = buffer;
+      return toReturn;
     }
-
-    public void start() {
-        ExecutionState state = _started.get();
-
-        if (state == ExecutionState.Running) {
-            throw new RuntimeException("Already Started");
-        }
-
-        if (_started.compareAndSet(state, ExecutionState.Running)) {
-            _queue.setRunning(true);
-            execute(new Runnable() {
-                public void run() {
-                    //flush any pending events in execute
-                }
-            });
-        }
-    }
-
-    public void dispose() {
-        _queue.setRunning(false);
-        _started.set(ExecutionState.Stopped);
-        synchronized (_disposables) {
-            //copy list to prevent concurrent mod
-            for (Disposable r : _disposables.toArray(new Disposable[_disposables.size()])) {
-                r.dispose();
-            }
-        }
-    }
-
-    public void add(Disposable runOnStop) {
-        _disposables.add(runOnStop);
-    }
-
-    public boolean remove(Disposable disposable) {
-        return _disposables.remove(disposable);
-    }
-
-    public int size() {
-        return _disposables.size();
-    }
-
-    public Disposable schedule(Runnable command, long delay, TimeUnit unit) {
-        return _scheduler.schedule(command, delay, unit);
-    }
-
-    public Disposable scheduleAtFixedRate(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return register(_scheduler.scheduleAtFixedRate(command, initialDelay, delay, unit));
-    }
-
-    public Disposable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return register(_scheduler.scheduleWithFixedDelay(command, initialDelay, delay, unit));
-    }
-
-    private Disposable register(final Disposable stopper) {
-        Disposable wrapper = new Disposable() {
-            public void dispose() {
-                stopper.dispose();
-                remove(this);
-            }
-        };
-        //scheduler is shared so tasks removed individually
-        add(wrapper);
-        return wrapper;
-
-    }
+  }
 }

@@ -8,147 +8,147 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Provides a deterministic fiber implementation for testing.
- *
+ * <p>
  * FOR TESTING ONLY
  */
 public class FiberStub implements Fiber {
 
-    public final List<Disposable> Disposables = new ArrayList<>();
-    public final List<Runnable> Pending = new ArrayList<>();
-    public final List<ScheduledEvent> Scheduled = new ArrayList<>();
+  public final List<Disposable> Disposables = new ArrayList<>();
+  public final List<Runnable> Pending = new ArrayList<>();
+  public final List<ScheduledEvent> Scheduled = new ArrayList<>();
 
-    public void start() {
+  public void start() {
+  }
+
+  public void add(Disposable disposable) {
+    Disposables.add(disposable);
+  }
+
+  public boolean remove(Disposable disposable) {
+    return Disposables.remove(disposable);
+  }
+
+  public int size() {
+    return Disposables.size();
+  }
+
+  public void execute(Runnable command) {
+    Pending.add(command);
+  }
+
+  public Disposable schedule(Runnable runnable, long l, TimeUnit timeUnit) {
+    final ScheduledEvent event = new ScheduledEvent(runnable, l, timeUnit);
+    Scheduled.add(event);
+    return new Disposable() {
+      public void dispose() {
+        Scheduled.remove(event);
+      }
+    };
+  }
+
+  public Disposable scheduleAtFixedRate(Runnable runnable, long first, long interval, TimeUnit timeUnit) {
+    final ScheduledEvent event = new ScheduledEvent(runnable, first, interval, timeUnit);
+    Scheduled.add(event);
+    return new Disposable() {
+      public void dispose() {
+        Scheduled.remove(event);
+      }
+    };
+  }
+
+  public Disposable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+    return scheduleAtFixedRate(command, initialDelay, delay, unit);
+  }
+
+  public void dispose() {
+  }
+
+  public void executeAllPending() {
+    for (Runnable runnable : new ArrayList<>(Pending)) {
+      runnable.run();
+      Pending.remove(runnable);
+    }
+  }
+
+  public void executeAllScheduled() {
+    for (ScheduledEvent event : new ArrayList<>(Scheduled)) {
+      event.getRunnable().run();
+      if (!event.isRecurring()) {
+        Scheduled.remove(event);
+      }
+    }
+  }
+
+  public static class ScheduledEvent {
+
+    private final Runnable runnable;
+    private final long first;
+    private final long interval;
+    private final TimeUnit timeUnit;
+    private final boolean isRecurring;
+
+    public ScheduledEvent(Runnable runnable, long time, TimeUnit timeUnit) {
+      this(runnable, time, -1, timeUnit, false);
     }
 
-    public void add(Disposable disposable) {
-        Disposables.add(disposable);
+    public ScheduledEvent(Runnable runnable, long first, long interval, TimeUnit timeUnit, boolean recurring) {
+      this.runnable = runnable;
+      this.first = first;
+      this.interval = interval;
+      this.timeUnit = timeUnit;
+      this.isRecurring = recurring;
     }
 
-    public boolean remove(Disposable disposable) {
-        return Disposables.remove(disposable);
+    public ScheduledEvent(Runnable runnable, long first, long interval, TimeUnit timeUnit) {
+      this(runnable, first, interval, timeUnit, true);
     }
 
-    public int size() {
-        return Disposables.size();
+    public Runnable getRunnable() {
+      return runnable;
     }
 
-    public void execute(Runnable command) {
-        Pending.add(command);
+    public long getFirst() {
+      return first;
     }
 
-    public Disposable schedule(Runnable runnable, long l, TimeUnit timeUnit) {
-        final ScheduledEvent event = new ScheduledEvent(runnable, l, timeUnit);
-        Scheduled.add(event);
-        return new Disposable() {
-            public void dispose() {
-                Scheduled.remove(event);
-            }
-        };
+    public long getInterval() {
+      return interval;
     }
 
-    public Disposable scheduleAtFixedRate(Runnable runnable, long first, long interval, TimeUnit timeUnit) {
-        final ScheduledEvent event = new ScheduledEvent(runnable, first, interval, timeUnit);
-        Scheduled.add(event);
-        return new Disposable() {
-            public void dispose() {
-                Scheduled.remove(event);
-            }
-        };
+    public TimeUnit getTimeUnit() {
+      return timeUnit;
     }
 
-    public Disposable scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return scheduleAtFixedRate(command, initialDelay, delay, unit);
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      ScheduledEvent event = (ScheduledEvent) o;
+
+      if (first != event.first) return false;
+      if (interval != event.interval) return false;
+      if (isRecurring != event.isRecurring) return false;
+      if (runnable != null ? !runnable.equals(event.runnable) : event.runnable != null) return false;
+      return timeUnit == event.timeUnit;
     }
 
-    public void dispose() {
+    public int hashCode() {
+      int result;
+      result = (runnable != null ? runnable.hashCode() : 0);
+      result = 31 * result + (int) (first ^ (first >>> 32));
+      result = 31 * result + (int) (interval ^ (interval >>> 32));
+      result = 31 * result + (timeUnit != null ? timeUnit.hashCode() : 0);
+      result = 31 * result + (isRecurring ? 1 : 0);
+      return result;
     }
 
-    public void executeAllPending() {
-        for (Runnable runnable : new ArrayList<>(Pending)) {
-            runnable.run();
-            Pending.remove(runnable);
-        }
+    public boolean isRecurring() {
+      return isRecurring;
     }
 
-    public void executeAllScheduled() {
-        for (ScheduledEvent event : new ArrayList<>(Scheduled)) {
-            event.getRunnable().run();
-            if (!event.isRecurring()) {
-                Scheduled.remove(event);
-            }
-        }
+    public void run() {
+      runnable.run();
     }
-
-    public static class ScheduledEvent {
-
-        private final Runnable runnable;
-        private final long first;
-        private final long interval;
-        private final TimeUnit timeUnit;
-        private final boolean isRecurring;
-
-        public ScheduledEvent(Runnable runnable, long time, TimeUnit timeUnit) {
-            this(runnable, time, -1, timeUnit, false);
-        }
-
-        public ScheduledEvent(Runnable runnable, long first, long interval, TimeUnit timeUnit, boolean recurring) {
-            this.runnable = runnable;
-            this.first = first;
-            this.interval = interval;
-            this.timeUnit = timeUnit;
-            this.isRecurring = recurring;
-        }
-
-        public ScheduledEvent(Runnable runnable, long first, long interval, TimeUnit timeUnit) {
-            this(runnable, first, interval, timeUnit, true);
-        }
-
-        public Runnable getRunnable() {
-            return runnable;
-        }
-
-        public long getFirst() {
-            return first;
-        }
-
-        public long getInterval() {
-            return interval;
-        }
-
-        public TimeUnit getTimeUnit() {
-            return timeUnit;
-        }
-
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ScheduledEvent event = (ScheduledEvent) o;
-
-            if (first != event.first) return false;
-            if (interval != event.interval) return false;
-            if (isRecurring != event.isRecurring) return false;
-            if (runnable != null ? !runnable.equals(event.runnable) : event.runnable != null) return false;
-            return timeUnit == event.timeUnit;
-        }
-
-        public int hashCode() {
-            int result;
-            result = (runnable != null ? runnable.hashCode() : 0);
-            result = 31 * result + (int) (first ^ (first >>> 32));
-            result = 31 * result + (int) (interval ^ (interval >>> 32));
-            result = 31 * result + (timeUnit != null ? timeUnit.hashCode() : 0);
-            result = 31 * result + (isRecurring ? 1 : 0);
-            return result;
-        }
-
-        public boolean isRecurring() {
-            return isRecurring;
-        }
-
-        public void run() {
-            runnable.run();
-        }
-    }
+  }
 
 }

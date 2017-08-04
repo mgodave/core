@@ -9,33 +9,33 @@ import org.jetlang.core.Filter;
  */
 public class ChannelSubscription<T> extends BaseSubscription<T> {
 
-    private final Callback<T> _receiveMethod;
+  private final Callback<T> _receiveMethod;
 
-    public ChannelSubscription(DisposingExecutor queue, Callback<T> receiveMethod) {
-        this(queue, receiveMethod, null);
-    }
+  public ChannelSubscription(DisposingExecutor queue, Callback<T> receiveMethod) {
+    this(queue, receiveMethod, null);
+  }
 
-    public ChannelSubscription(DisposingExecutor fiber, Callback<T> receiveMethod,
-                               Filter<T> filter) {
-        super(fiber, filter);
-        this._receiveMethod = receiveMethod;
-    }
+  public ChannelSubscription(DisposingExecutor fiber, Callback<T> receiveMethod,
+                             Filter<T> filter) {
+    super(fiber, filter);
+    this._receiveMethod = receiveMethod;
+  }
 
-    /**
-     * Receives the event and queues the execution on the target execute.
-     */
-    @Override
-    protected void onMessageOnProducerThread(final T msg) {
-        Runnable asyncExec = new Runnable() {
-            public void run() {
-                _receiveMethod.onMessage(msg);
-            }
+  /**
+   * Receives the event and queues the execution on the target execute.
+   */
+  @Override
+  protected void onMessageOnProducerThread(final T msg) {
+    Runnable asyncExec = new Runnable() {
+      public void run() {
+        _receiveMethod.onMessage(msg);
+      }
 
-            @Override
-            public String toString() {
-                return _receiveMethod.toString() + "(" + msg + ")";
-            }
-        };
-        getQueue().execute(asyncExec);
-    }
+      @Override
+      public String toString() {
+        return _receiveMethod.toString() + "(" + msg + ")";
+      }
+    };
+    getQueue().execute(asyncExec);
+  }
 }

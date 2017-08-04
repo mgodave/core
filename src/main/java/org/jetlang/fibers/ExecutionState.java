@@ -1,7 +1,7 @@
 package org.jetlang.fibers;
 
 enum ExecutionState {
-    Created,
-    Running,
-    Stopped
+  Created,
+  Running,
+  Stopped
 }

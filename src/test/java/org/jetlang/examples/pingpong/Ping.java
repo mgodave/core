@@ -14,52 +14,52 @@ import java.util.concurrent.TimeUnit;
  */
 public class Ping {
 
-    private PingPongChannels channels;
-    private Fiber consumer;
-    private int total;
+  private PingPongChannels channels;
+  private Fiber consumer;
+  private int total;
 
-    public Ping(PingPongChannels channels, Fiber fiber, int total) {
-        this.channels = channels;
-        this.consumer = fiber;
-        this.total = total;
-    }
+  public Ping(PingPongChannels channels, Fiber fiber, int total) {
+    this.channels = channels;
+    this.consumer = fiber;
+    this.total = total;
+  }
 
-    public void start() {
-        Callback<Integer> onReceive = new Callback<Integer>() {
-            public void onMessage(Integer message) {
-                if (total > 0) {
-                    publishPing();
-                } else {
-                    channels.Stop.publish(null);
-                    consumer.dispose();
-                }
-            }
-        };
-        channels.Pong.subscribe(consumer, onReceive);
-        consumer.start();
+  public void start() {
+    Callback<Integer> onReceive = new Callback<Integer>() {
+      public void onMessage(Integer message) {
+        if (total > 0) {
+          publishPing();
+        } else {
+          channels.Stop.publish(null);
+          consumer.dispose();
+        }
+      }
+    };
+    channels.Pong.subscribe(consumer, onReceive);
+    consumer.start();
 
-        //send first ping from ping fiber. The first ping could have been published from the main
-        // thread as well, but in this case we'll use the ping fiber to be consistent.
-        Runnable firstPing = new Runnable() {
-            public void run() {
-                publishPing();
-            }
-        };
-        consumer.execute(firstPing);
+    //send first ping from ping fiber. The first ping could have been published from the main
+    // thread as well, but in this case we'll use the ping fiber to be consistent.
+    Runnable firstPing = new Runnable() {
+      public void run() {
+        publishPing();
+      }
+    };
+    consumer.execute(firstPing);
 
-        Callback<List<Integer>> onBatch = new Callback<List<Integer>>() {
+    Callback<List<Integer>> onBatch = new Callback<List<Integer>>() {
 
-            public void onMessage(List<Integer> message) {
-                //consume all messages.
-            }
-        };
-        BatchSubscriber<Integer> sub = new BatchSubscriber<>(consumer, onBatch, 0, TimeUnit.MILLISECONDS);
-        channels.Ping.subscribe(consumer, sub);
+      public void onMessage(List<Integer> message) {
+        //consume all messages.
+      }
+    };
+    BatchSubscriber<Integer> sub = new BatchSubscriber<>(consumer, onBatch, 0, TimeUnit.MILLISECONDS);
+    channels.Ping.subscribe(consumer, sub);
 
-    }
+  }
 
-    private void publishPing() {
-        total--;
-        channels.Ping.publish(total);
-    }
+  private void publishPing() {
+    total--;
+    channels.Ping.publish(total);
+  }
 }

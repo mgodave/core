@@ -13,55 +13,55 @@ import java.util.concurrent.TimeUnit;
  * Time: 1:31:46 PM
  */
 public class AsyncRequest<R, V> {
-    private final Fiber target;
-    private BatchTimeout<V> timeout;
-    private int responses = 1;
+  private final Fiber target;
+  private BatchTimeout<V> timeout;
+  private int responses = 1;
 
-    public AsyncRequest(Fiber target) {
-        this.target = target;
-    }
+  public AsyncRequest(Fiber target) {
+    this.target = target;
+  }
 
-    public AsyncRequest<R, V> setTimeout(Callback<List<V>> onTimeout, long time, TimeUnit unit) {
-        timeout = new BatchTimeout<>(onTimeout, time, unit);
-        return this;
-    }
+  public static <R, V> Disposable withOneReply(Fiber fiber, RequestChannel<R, V> channel, R req, Callback<V> onReply) {
+    return SingleReply.publish(fiber, channel, req, onReply);
+  }
 
-    /**
-     * @param responses - number of expected responses or 0 if using a timeout to gather responses.
-     * @return chained request object
-     */
-    public AsyncRequest<R, V> setResponseCount(int responses) {
-        this.responses = responses;
-        return this;
-    }
+  public static <R, V> Disposable withOneReply(Fiber fiber, RequestChannel<R, V> channel, R req, Callback<V> onReply,
+                                               long timeout, TimeUnit unit, Runnable onTimeout) {
+    return SingleReply.publish(fiber, channel, req, onReply, timeout, unit, onTimeout);
+  }
 
-    public Disposable publish(RequestChannel<R, V> channel, R req, Callback<List<V>> onResponse) {
-        BatchCallback<R, V> callback = new BatchCallback<>(responses, onResponse, timeout);
-        callback.send(channel, req, target);
-        return callback;
-    }
+  public AsyncRequest<R, V> setTimeout(Callback<List<V>> onTimeout, long time, TimeUnit unit) {
+    timeout = new BatchTimeout<>(onTimeout, time, unit);
+    return this;
+  }
 
-    public static <R, V> Disposable withOneReply(Fiber fiber, RequestChannel<R, V> channel, R req, Callback<V> onReply) {
-        return SingleReply.publish(fiber, channel, req, onReply);
-    }
+  /**
+   * @param responses - number of expected responses or 0 if using a timeout to gather responses.
+   * @return chained request object
+   */
+  public AsyncRequest<R, V> setResponseCount(int responses) {
+    this.responses = responses;
+    return this;
+  }
 
-    public static <R, V> Disposable withOneReply(Fiber fiber, RequestChannel<R, V> channel, R req, Callback<V> onReply,
-                                                 long timeout, TimeUnit unit, Runnable onTimeout) {
-        return SingleReply.publish(fiber, channel, req, onReply, timeout, unit, onTimeout);
-    }
+  public Disposable publish(RequestChannel<R, V> channel, R req, Callback<List<V>> onResponse) {
+    BatchCallback<R, V> callback = new BatchCallback<>(responses, onResponse, timeout);
+    callback.send(channel, req, target);
+    return callback;
+  }
 
 }
 
 class BatchTimeout<V> {
-    final Callback<List<V>> cb;
-    final long time;
-    final TimeUnit unit;
+  final Callback<List<V>> cb;
+  final long time;
+  final TimeUnit unit;
 
-    public BatchTimeout(Callback<List<V>> cb, long time, TimeUnit unit) {
-        this.cb = cb;
-        this.time = time;
-        this.unit = unit;
-    }
+  public BatchTimeout(Callback<List<V>> cb, long time, TimeUnit unit) {
+    this.cb = cb;
+    this.time = time;
+    this.unit = unit;
+  }
 
 }
 

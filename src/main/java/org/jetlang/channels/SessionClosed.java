@@ -5,7 +5,7 @@ package org.jetlang.channels;
  */
 public interface SessionClosed<R> {
 
-    R getOriginalRequest();
+  R getOriginalRequest();
 
-    Session getSession();
+  Session getSession();
 }

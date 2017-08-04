@@ -7,20 +7,20 @@ import java.util.concurrent.Executor;
  */
 public class SynchronousExecutor implements Executor {
 
-    public boolean isRunning() {
-        return _running;
-    }
+  private volatile boolean _running = true;
 
-    public void setRunning(boolean _running) {
-        this._running = _running;
-    }
+  public boolean isRunning() {
+    return _running;
+  }
 
-    private volatile boolean _running = true;
+  public void setRunning(boolean _running) {
+    this._running = _running;
+  }
 
-    public void execute(Runnable command) {
-        if (_running) {
-            command.run();
-        }
+  public void execute(Runnable command) {
+    if (_running) {
+      command.run();
     }
+  }
 
 }

@@ -11,63 +11,63 @@ import java.util.List;
  */
 public class RunnableExecutorImpl implements RunnableExecutor {
 
-    private final EventQueue _commands;
-    private final List<Disposable> _disposables = Collections.synchronizedList(new ArrayList<Disposable>());
+  private final EventQueue _commands;
+  private final List<Disposable> _disposables = Collections.synchronizedList(new ArrayList<Disposable>());
 
-    private final BatchExecutor _commandExecutor;
+  private final BatchExecutor _commandExecutor;
 
-    public RunnableExecutorImpl() {
-        this(new BatchExecutorImpl());
+  public RunnableExecutorImpl() {
+    this(new BatchExecutorImpl());
+  }
+
+  public RunnableExecutorImpl(BatchExecutor executor) {
+    this(executor, new RunnableBlockingQueue());
+  }
+
+  public RunnableExecutorImpl(BatchExecutor exec, EventQueue q) {
+    this._commands = q;
+    this._commandExecutor = exec;
+  }
+
+  public void execute(Runnable command) {
+    _commands.put(command);
+  }
+
+  public void run() {
+    List<Runnable> buffer = new LinkedList<>();
+    while (_commands.isRunning()) {
+      buffer = _commands.swap(buffer);
+      _commandExecutor.execute(buffer);
+      buffer.clear();
     }
+  }
 
-    public RunnableExecutorImpl(BatchExecutor executor) {
-        this(executor, new RunnableBlockingQueue());
+  public void dispose() {
+    _commands.setRunning(false);
+
+    execute(new Runnable() {
+      public void run() {
+        // so it wakes up and will notice that we've told it to stop
+      }
+    });
+
+    synchronized (_disposables) {
+      //copy list to prevent concurrent mod
+      for (Disposable r : _disposables.toArray(new Disposable[_disposables.size()])) {
+        r.dispose();
+      }
     }
+  }
 
-    public RunnableExecutorImpl(BatchExecutor exec, EventQueue q) {
-        this._commands = q;
-        this._commandExecutor = exec;
-    }
+  public void add(Disposable r) {
+    _disposables.add(r);
+  }
 
-    public void execute(Runnable command) {
-        _commands.put(command);
-    }
+  public boolean remove(Disposable disposable) {
+    return _disposables.remove(disposable);
+  }
 
-    public void run() {
-        List<Runnable> buffer = new LinkedList<>();
-        while (_commands.isRunning()) {
-            buffer = _commands.swap(buffer);
-            _commandExecutor.execute(buffer);
-            buffer.clear();
-        }
-    }
-
-    public void dispose() {
-        _commands.setRunning(false);
-
-        execute(new Runnable() {
-            public void run() {
-                // so it wakes up and will notice that we've told it to stop
-            }
-        });
-
-        synchronized (_disposables) {
-            //copy list to prevent concurrent mod
-            for (Disposable r : _disposables.toArray(new Disposable[_disposables.size()])) {
-                r.dispose();
-            }
-        }
-    }
-
-    public void add(Disposable r) {
-        _disposables.add(r);
-    }
-
-    public boolean remove(Disposable disposable) {
-        return _disposables.remove(disposable);
-    }
-
-    public int size() {
-        return _disposables.size();
-    }
+  public int size() {
+    return _disposables.size();
+  }
 }

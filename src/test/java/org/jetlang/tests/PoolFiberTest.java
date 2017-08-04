@@ -16,41 +16,41 @@ import java.util.concurrent.TimeUnit;
  */
 public class PoolFiberTest extends FiberBaseTest {
 
-    private ExecutorService _executor;
-    private PoolFiberFactory _fiberFactory;
+  private ExecutorService _executor;
+  private PoolFiberFactory _fiberFactory;
 
-    @Override
-    public Fiber createFiber() {
-        return _fiberFactory.create();
+  @Override
+  public Fiber createFiber() {
+    return _fiberFactory.create();
+  }
+
+  @Override
+  public void doSetup() {
+    _executor = Executors.newCachedThreadPool();
+    _fiberFactory = new PoolFiberFactory(_executor);
+  }
+
+  @Override
+  public void doTearDown() {
+    if (_executor != null)
+      _executor.shutdown();
+    if (_fiberFactory != null) {
+      _fiberFactory.dispose();
     }
+  }
 
-    @Override
-    public void doSetup() {
-        _executor = Executors.newCachedThreadPool();
-        _fiberFactory = new PoolFiberFactory(_executor);
-    }
+  @Test
+  public void ScheduleIntervalWithCancel() throws InterruptedException {
+    _bus.start();
+    Runnable onReset = new Runnable() {
+      public void run() {
+      }
+    };
+    Disposable stopper = _bus.scheduleAtFixedRate(onReset, 15, 15, TimeUnit.MILLISECONDS);
+    assertEquals(1, _bus.size());
+    stopper.dispose();
+    assertEquals(0, _bus.size());
 
-    @Override
-    public void doTearDown() {
-        if (_executor != null)
-            _executor.shutdown();
-        if (_fiberFactory != null) {
-            _fiberFactory.dispose();
-        }
-    }
-
-    @Test
-    public void ScheduleIntervalWithCancel() throws InterruptedException {
-        _bus.start();
-        Runnable onReset = new Runnable() {
-            public void run() {
-            }
-        };
-        Disposable stopper = _bus.scheduleAtFixedRate(onReset, 15, 15, TimeUnit.MILLISECONDS);
-        assertEquals(1, _bus.size());
-        stopper.dispose();
-        assertEquals(0, _bus.size());
-
-    }
+  }
 
 }

@@ -1,10 +1,10 @@
 package org.jetlang.examples.pingpong;
 
-import org.junit.Assert;
 import org.jetlang.core.Disposable;
 import org.jetlang.fibers.Fiber;
 import org.jetlang.fibers.PoolFiberFactory;
 import org.jetlang.fibers.ThreadFiber;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -19,50 +19,50 @@ import java.util.concurrent.TimeUnit;
  */
 public class PingPongTest {
 
-    @Test
-    public void executWithDedicatedThreads() throws Exception {
-        PingPongChannels channels = new PingPongChannels();
+  @Test
+  public void executWithDedicatedThreads() throws Exception {
+    PingPongChannels channels = new PingPongChannels();
 
-        ThreadFiber pingThread = new ThreadFiber();
-        Ping ping = new Ping(channels, pingThread, 100000);
+    ThreadFiber pingThread = new ThreadFiber();
+    Ping ping = new Ping(channels, pingThread, 100000);
 
-        ThreadFiber pongThread = new ThreadFiber();
-        Pong pong = new Pong(channels, pongThread);
+    ThreadFiber pongThread = new ThreadFiber();
+    Pong pong = new Pong(channels, pongThread);
 
-        pong.start();
-        ping.start();
+    pong.start();
+    ping.start();
 
-        //wait for threads to cleanly exit
-        pingThread.join();
-        pongThread.join();
-    }
+    //wait for threads to cleanly exit
+    pingThread.join();
+    pongThread.join();
+  }
 
-    @Test
-    public void executeWithPool() throws InterruptedException {
-        ExecutorService exec = Executors.newCachedThreadPool();
-        PoolFiberFactory fact = new PoolFiberFactory(exec);
-        PingPongChannels channels = new PingPongChannels();
+  @Test
+  public void executeWithPool() throws InterruptedException {
+    ExecutorService exec = Executors.newCachedThreadPool();
+    PoolFiberFactory fact = new PoolFiberFactory(exec);
+    PingPongChannels channels = new PingPongChannels();
 
-        final CountDownLatch onstop = new CountDownLatch(2);
-        Disposable dispose = new Disposable() {
-            public void dispose() {
-                onstop.countDown();
-            }
-        };
-        Fiber pingThread = fact.create();
-        pingThread.add(dispose);
-        Ping ping = new Ping(channels, pingThread, 100000);
+    final CountDownLatch onstop = new CountDownLatch(2);
+    Disposable dispose = new Disposable() {
+      public void dispose() {
+        onstop.countDown();
+      }
+    };
+    Fiber pingThread = fact.create();
+    pingThread.add(dispose);
+    Ping ping = new Ping(channels, pingThread, 100000);
 
-        Fiber pongThread = fact.create();
-        pongThread.add(dispose);
-        Pong pong = new Pong(channels, pongThread);
+    Fiber pongThread = fact.create();
+    pongThread.add(dispose);
+    Pong pong = new Pong(channels, pongThread);
 
-        pong.start();
-        ping.start();
+    pong.start();
+    ping.start();
 
-        //wait for fibers to be disposed.
-        Assert.assertTrue(onstop.await(60, TimeUnit.SECONDS));
-        //destroy thread pool
-        exec.shutdown();
-    }
+    //wait for fibers to be disposed.
+    Assert.assertTrue(onstop.await(60, TimeUnit.SECONDS));
+    //destroy thread pool
+    exec.shutdown();
+  }
 }

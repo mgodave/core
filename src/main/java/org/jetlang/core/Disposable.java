@@ -5,8 +5,8 @@ package org.jetlang.core;
  */
 public interface Disposable {
 
-    /**
-     * Dispose this instance. It should be considered unusable after calling this method
-     */
-    void dispose();
+  /**
+   * Dispose this instance. It should be considered unusable after calling this method
+   */
+  void dispose();
 }
