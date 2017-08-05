@@ -42,7 +42,7 @@ public class ListIterationBenchmark {
 
   @SuppressWarnings("ForLoopReplaceableByForEach")
   @Benchmark
-  @OperationsPerInvocation(10NUM_ITERATIONS0000)
+  @OperationsPerInvocation(NUM_ITERATIONS)
   public void iterateArrayIndexed(Blackhole bh) {
     for (int i = 0; i < array.length; i++) {
       bh.consume(array[i]);
