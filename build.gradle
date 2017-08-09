@@ -1,7 +1,6 @@
 buildscript {
     repositories{
         mavenCentral()
-        maven { url "http://jcenter.bintray.com/" }
         maven { url "https://plugins.gradle.org/m2/" }
     }
 
@@ -21,15 +20,9 @@ repositories {
 }
 
 dependencies {
-    jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.19'
-    jmh 'org.openjdk.jmh:jmh-core:1.19'
     testCompile 'junit:junit:4.+'
 }
 
 task wrapper(type: Wrapper) {
     gradleVersion = '4.0.2'
-}
-
-jmh {
-    duplicateClassesStrategy = 'warn'
 }
